@@ -2,7 +2,7 @@
 
 namespace Messages
 {
-    public class ContinueWithProcess : IMessage
+    public class SendEmail : IMessage
     {
     }
 }

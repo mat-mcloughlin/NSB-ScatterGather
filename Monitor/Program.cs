@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Messages;
 using NServiceBus;
+using NServiceBus.Persistence;
 using Raven.Client.Document;
 using Raven.Client.Embedded;
 
@@ -17,34 +18,23 @@ namespace Monitor
 
         static async Task AsyncMain()
         {
+            #region setup
             var endpointConfiguration = new EndpointConfiguration("Scatter-Gather.Monitor");
             endpointConfiguration.UseSerialization<JsonSerializer>();
             endpointConfiguration.EnableInstallers();
             endpointConfiguration.SendFailedMessagesTo("error");
+            endpointConfiguration.AuditProcessedMessagesTo("audit");
 
-            var documentStore = new EmbeddableDocumentStore
-            {
-                DataDirectory = "Data",
-                UseEmbeddedHttpServer = true,
-                DefaultDatabase = "catter-Gather",
-                Configuration =
-                {
-                    Port = 32076,
-                    PluginsDirectory = Environment.CurrentDirectory,
-                    HostName = "localhost"
-                }
-            };
-            documentStore.Initialize();
+            //var persistence = endpointConfiguration.UsePersistence<RavenDBPersistence>();
+            //persistence.DoNotSetupDatabasePermissions(); //Only required to simplify the sample setup
+            //persistence.SetDefaultDocumentStore(SetupDocumentStore());
 
-            Trace.Listeners.Clear();
-            Trace.Listeners.Add(new DefaultTraceListener());
+            var persistence = endpointConfiguration.UsePersistence<NHibernatePersistence>();
+            persistence.ConnectionString(@"Data Source=.;Initial Catalog=ScatterGather;Integrated Security=True");
 
-            var persistence = endpointConfiguration.UsePersistence<RavenDBPersistence>();
-            persistence.DoNotSetupDatabasePermissions(); //Only required to simplify the sample setup
-            persistence.SetDefaultDocumentStore(documentStore);
+            endpointConfiguration.UnicastRouting().RouteToEndpoint(typeof(ProcessFile), "Scatter-Gather.Processor");
+            #endregion setup
             
-            endpointConfiguration.UnicastRouting().RouteToEndpoint(typeof(ProcessFiles), "Scatter-Gather.Processor");
-
             var endpoint = await Endpoint.Start(endpointConfiguration);
             try
             {
@@ -60,6 +50,27 @@ namespace Monitor
             {
                 await endpoint.Stop();
             }
+        }
+
+        private static EmbeddableDocumentStore SetupDocumentStore()
+        {
+            var documentStore = new EmbeddableDocumentStore
+            {
+                DataDirectory = "Data",
+                UseEmbeddedHttpServer = true,
+                DefaultDatabase = "Scatter-Gather",
+                Configuration =
+                {
+                    Port = 32076,
+                    PluginsDirectory = Environment.CurrentDirectory,
+                    HostName = "localhost"
+                }
+            };
+            documentStore.Initialize();
+
+            Trace.Listeners.Clear();
+            Trace.Listeners.Add(new DefaultTraceListener());
+            return documentStore;
         }
     }
 }

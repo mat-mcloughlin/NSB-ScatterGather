@@ -10,13 +10,10 @@ namespace Monitor
     public class PackageHandlerSaga : Saga<PackageHandlerData>,
         IAmStartedByMessages<NewZipFile>,
         IHandleMessages<FileUnzipped>,
-        IHandleMessages<FilesProcessed>
+        IHandleMessages<FilesProcessed>, 
+        IHandleMessages<FileFailedToProcess>
     {
         static ILog log = LogManager.GetLogger<PackageHandlerSaga>();
-        
-        protected override void ConfigureHowToFindSaga(SagaPropertyMapper<PackageHandlerData> mapper)
-        {
-        }
 
         public Task Handle(NewZipFile message, IMessageHandlerContext context)
         {
@@ -30,27 +27,42 @@ namespace Monitor
 
         public async Task Handle(FileUnzipped message, IMessageHandlerContext context)
         {
-            Data.FilesToProcess = message.Files;
+            Data.FilesToProcess = message.Files.Select(f => new FileToProcess { FileLocation = f}).ToList();
 
             log.InfoFormat("Processing files.");
             foreach (var file in message.Files)
             {
-                await context.Send(new ProcessFiles { File = file });
+                await context.Send(new ProcessFile { File = file });
             }
         }
-        
+
         public Task Handle(FilesProcessed message, IMessageHandlerContext context)
         {
-            Data.FilesToProcess.Remove(message.File);
+            //Data.FilesToProcess.Remove(message.File);
             log.InfoFormat("Files left to process: {0}.", Data.FilesToProcess.Count);
 
+            return CheckComplete(context);
+        }
+
+        public Task Handle(FileFailedToProcess message, IMessageHandlerContext context)
+        {
+            // Add some additional business logic here like sending an email
+            
+            //Data.FilesToProcess.Remove(message.File);
+            return CheckComplete(context);
+        }
+
+        private async Task CheckComplete(IMessageHandlerContext context)
+        {
             if (!Data.FilesToProcess.Any())
             {
-                context.SendLocal(new ContinueWithProcess());
+                await context.SendLocal(new SendEmail());
                 MarkAsComplete();
             }
+        }
 
-            return Task.FromResult(0);
+        protected override void ConfigureHowToFindSaga(SagaPropertyMapper<PackageHandlerData> mapper)
+        {
         }
     }
 }

@@ -7,7 +7,7 @@ using Messages;
 using NServiceBus;
 using NServiceBus.Logging;
 
-namespace Processor
+namespace Processor_2
 {
     class ProcessFilesHandler : IHandleMessages<ProcessFile>
     {

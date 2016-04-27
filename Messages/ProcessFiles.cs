@@ -4,7 +4,7 @@ using NServiceBus;
 
 namespace Messages
 {
-    public class ProcessFiles : IMessage
+    public class ProcessFile : IMessage
     {
         public string File { get; set; }
     }
