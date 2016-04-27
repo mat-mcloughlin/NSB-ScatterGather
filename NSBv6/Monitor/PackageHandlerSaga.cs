@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Messages;
@@ -27,7 +28,7 @@ namespace Monitor
 
         public async Task Handle(FileUnzipped message, IMessageHandlerContext context)
         {
-            Data.FilesToProcess = message.Files.Select(f => new FileToProcess { FileLocation = f}).ToList();
+            Data.FilesToProcess = string.Join("|", message.Files);
 
             log.InfoFormat("Processing files.");
             foreach (var file in message.Files)
@@ -38,8 +39,11 @@ namespace Monitor
 
         public Task Handle(FilesProcessed message, IMessageHandlerContext context)
         {
-            //Data.FilesToProcess.Remove(message.File);
-            log.InfoFormat("Files left to process: {0}.", Data.FilesToProcess.Count);
+            var files = Data.FilesToProcess.Split('|').ToList();
+            files.Remove(message.File);
+
+            log.InfoFormat("{0} Left to process.", files.Count);
+            Data.FilesToProcess = string.Join("|", files);
 
             return CheckComplete(context);
         }
@@ -47,14 +51,19 @@ namespace Monitor
         public Task Handle(FileFailedToProcess message, IMessageHandlerContext context)
         {
             // Add some additional business logic here like sending an email
-            
-            //Data.FilesToProcess.Remove(message.File);
+
+            var files = Data.FilesToProcess.Split('|').ToList();
+            files.Remove(message.File);
+
+            log.InfoFormat("{0} Left to process.", files.Count);
+
+            Data.FilesToProcess = string.Join("|", files);
             return CheckComplete(context);
         }
 
         private async Task CheckComplete(IMessageHandlerContext context)
         {
-            if (!Data.FilesToProcess.Any())
+            if (!Data.FilesToProcess.Split("|".ToCharArray(), StringSplitOptions.RemoveEmptyEntries).Any())
             {
                 await context.SendLocal(new SendEmail());
                 MarkAsComplete();
