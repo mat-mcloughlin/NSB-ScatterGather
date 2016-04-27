@@ -30,18 +30,18 @@ namespace Monitor
 
         public async Task Handle(FileUnzipped message, IMessageHandlerContext context)
         {
-            Data.FilesToProcess = message.Batches.Select(s => s.BatchId).ToList();
+            Data.FilesToProcess = message.Files;
 
-            log.InfoFormat("Processing batches.");
-            foreach (var batch in message.Batches)
+            log.InfoFormat("Processing files.");
+            foreach (var file in message.Files)
             {
-                await context.Send(new ProcessFiles { BatchId = batch.BatchId, Batch = batch.Files });
+                await context.Send(new ProcessFiles { File = file });
             }
         }
         
         public Task Handle(FilesProcessed message, IMessageHandlerContext context)
         {
-            Data.FilesToProcess.Remove(message.BatchId);
+            Data.FilesToProcess.Remove(message.File);
             log.InfoFormat("Files left to process: {0}.", Data.FilesToProcess.Count);
 
             if (!Data.FilesToProcess.Any())

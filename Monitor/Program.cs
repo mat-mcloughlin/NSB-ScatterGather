@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Messages;
 using NServiceBus;
 using Raven.Client.Document;
+using Raven.Client.Embedded;
 
 namespace Monitor
 {
@@ -20,12 +22,22 @@ namespace Monitor
             endpointConfiguration.EnableInstallers();
             endpointConfiguration.SendFailedMessagesTo("error");
 
-            var documentStore = new DocumentStore
+            var documentStore = new EmbeddableDocumentStore
             {
-                Url = "http://localhost:8080",
-                DefaultDatabase = "ScatterGather"
+                DataDirectory = "Data",
+                UseEmbeddedHttpServer = true,
+                DefaultDatabase = "catter-Gather",
+                Configuration =
+                {
+                    Port = 32076,
+                    PluginsDirectory = Environment.CurrentDirectory,
+                    HostName = "localhost"
+                }
             };
             documentStore.Initialize();
+
+            Trace.Listeners.Clear();
+            Trace.Listeners.Add(new DefaultTraceListener());
 
             var persistence = endpointConfiguration.UsePersistence<RavenDBPersistence>();
             persistence.DoNotSetupDatabasePermissions(); //Only required to simplify the sample setup

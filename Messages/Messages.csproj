@@ -45,7 +45,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ContinueWitProcess.cs" />
-    <Compile Include="FileBatch.cs" />
     <Compile Include="FilesProcessed.cs" />
     <Compile Include="FileUnzipped.cs" />
     <Compile Include="NewZipFile.cs" />

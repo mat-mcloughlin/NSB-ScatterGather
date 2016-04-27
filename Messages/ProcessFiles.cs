@@ -6,7 +6,6 @@ namespace Messages
 {
     public class ProcessFiles : IMessage
     {
-        public List<string> Batch { get; set; }
-        public Guid BatchId { get; set; }
+        public string File { get; set; }
     }
 }

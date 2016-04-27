@@ -13,8 +13,7 @@ namespace Monitor
     class UnzipHandler : IHandleMessages<UnzipFile>
     {
         static ILog log = LogManager.GetLogger<UnzipHandler>();
-
-
+        
         public Task Handle(UnzipFile message, IMessageHandlerContext context)
         {
             log.InfoFormat("Unzipping File.");
@@ -23,15 +22,10 @@ namespace Monitor
             ZipFile.ExtractToDirectory(message.ZipPath, message.ExtractPath);
 
             var files = GetFiles(message.ExtractPath);
-
-            var batches = files
-                .Batch(10)
-                .Select(f => new Batch { BatchId = Guid.NewGuid(), Files = f })
-                .ToList();
-
-            log.InfoFormat("File unzipped, {0} batches created.", batches.Count);
             
-            return context.Reply(new FileUnzipped { Batches = batches });
+            log.InfoFormat("{0} files unzipped.", files.Count);
+            
+            return context.Reply(new FileUnzipped { Files = files });
         }
 
         private List<string> GetFiles(string extractPath)

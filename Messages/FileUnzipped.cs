@@ -5,6 +5,6 @@ namespace Messages
 {
     public class FileUnzipped : IMessage
     {
-        public List<Batch> Batches { get; set; }
+        public List<string> Files { get; set; }
     }
 }

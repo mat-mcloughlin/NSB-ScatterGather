@@ -12,6 +12,6 @@ namespace Monitor
 
         public string OriginalMessageId { get; set; }
 
-        public List<Guid> FilesToProcess { get; set; }
+        public List<string> FilesToProcess { get; set; }
     }
 }
