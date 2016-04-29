@@ -20,4 +20,4 @@ This sample includes both a v5 and v6 implementation
     - Re run the application.
 
 ## RavenDB specific instructions
-This application uses the embedded RavenDB installation. No setup should be required.
+This application uses the embedded RavenDB installation so you need to run Visual Studio with admin privledges
